@@ -93,6 +93,8 @@
     "react": "17.0.2"
   },
   "dependencies": {
+    "@babel/eslint-parser": "^7.13.10",
+    "@babel/eslint-plugin": "^7.13.10",
     "@jest/create-cache-key-function": "^27.0.1",
     "@react-native-community/cli": "^6.0.0",
     "@react-native-community/cli-platform-android": "^6.0.0",
