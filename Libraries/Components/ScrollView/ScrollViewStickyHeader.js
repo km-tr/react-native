@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -22,7 +22,7 @@ import type {LayoutEvent} from '../../Types/CoreEventTypes';
 
 const AnimatedView = AnimatedImplementation.createAnimatedComponent(View);
 
-export type Props = {
+export type Props = $ReadOnly<{
   children?: React.Element<any>,
   nextHeaderLayoutY: ?number,
   onLayout: (event: LayoutEvent) => void,
@@ -34,8 +34,7 @@ export type Props = {
   scrollViewHeight: ?number,
   nativeID?: ?string,
   hiddenOnScroll?: ?boolean,
-  ...
-};
+}>;
 
 type State = {
   measured: boolean,
@@ -66,9 +65,10 @@ class ScrollViewStickyHeader extends React.Component<Props, State> {
   _animatedValueListener: (valueObject: $ReadOnly<{|value: number|}>) => void;
   _debounceTimeout: number = Platform.OS === 'android' ? 15 : 64;
 
-  setNextHeaderY(y: number) {
+  setNextHeaderY: (y: number) => void = (y: number): void => {
+    this._shouldRecreateTranslateY = true;
     this.setState({nextHeaderLayoutY: y});
-  }
+  };
 
   componentWillUnmount() {
     if (this._translateY != null && this._animatedValueListenerId != null) {
@@ -149,7 +149,7 @@ class ScrollViewStickyHeader extends React.Component<Props, State> {
     );
   }
 
-  _onLayout = event => {
+  _onLayout = (event: any) => {
     const layoutY = event.nativeEvent.layout.y;
     const layoutHeight = event.nativeEvent.layout.height;
     const measured = true;

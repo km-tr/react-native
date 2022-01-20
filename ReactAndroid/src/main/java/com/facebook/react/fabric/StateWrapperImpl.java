@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,6 +16,7 @@ import com.facebook.proguard.annotations.DoNotStrip;
 import com.facebook.react.bridge.NativeMap;
 import com.facebook.react.bridge.ReadableNativeMap;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.common.mapbuffer.ReadableMapBuffer;
 import com.facebook.react.uimanager.StateWrapper;
 
 /**
@@ -40,6 +41,18 @@ public class StateWrapperImpl implements StateWrapper {
   }
 
   private native ReadableNativeMap getStateDataImpl();
+
+  private native ReadableMapBuffer getStateMapBufferDataImpl();
+
+  @Override
+  @Nullable
+  public ReadableMapBuffer getStatDataMapBuffer() {
+    if (mDestroyed) {
+      FLog.e(TAG, "Race between StateWrapperImpl destruction and getState");
+      return null;
+    }
+    return getStateMapBufferDataImpl();
+  }
 
   @Override
   @Nullable

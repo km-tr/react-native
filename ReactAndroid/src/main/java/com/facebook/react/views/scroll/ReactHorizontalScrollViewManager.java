@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -102,9 +102,19 @@ public class ReactHorizontalScrollViewManager extends ViewGroupManager<ReactHori
     view.setSnapInterval((int) (snapToInterval * screenDisplayMetrics.density));
   }
 
+  @ReactProp(name = "snapToAlignment")
+  public void setSnapToAlignment(ReactHorizontalScrollView view, String alignment) {
+    view.setSnapToAlignment(ReactScrollViewHelper.parseSnapToAlignment(alignment));
+  }
+
   @ReactProp(name = "snapToOffsets")
   public void setSnapToOffsets(
       ReactHorizontalScrollView view, @Nullable ReadableArray snapToOffsets) {
+    if (snapToOffsets == null) {
+      view.setSnapOffsets(null);
+      return;
+    }
+
     DisplayMetrics screenDisplayMetrics = DisplayMetricsHolder.getScreenDisplayMetrics();
     List<Integer> offsets = new ArrayList<Integer>();
     for (int i = 0; i < snapToOffsets.size(); i++) {

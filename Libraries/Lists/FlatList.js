@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -125,13 +125,38 @@ type OptionalProps<ItemT> = {|
   /**
    * Multiple columns can only be rendered with `horizontal={false}` and will zig-zag like a
    * `flexWrap` layout. Items should all be the same height - masonry layouts are not supported.
+   *
+   * The default value is 1.
    */
-  numColumns: number,
+  numColumns?: number,
+  /**
+   * Note: may have bugs (missing content) in some circumstances - use at your own risk.
+   *
+   * This may improve scroll performance for large lists.
+   *
+   * The default value is true for Android.
+   */
+  removeClippedSubviews?: boolean,
   /**
    * See `ScrollView` for flow type and further documentation.
    */
   fadingEdgeLength?: ?number,
 |};
+
+/**
+ * Default Props Helper Functions
+ * Use the following helper functions for default values
+ */
+
+// removeClippedSubviewsOrDefault(this.props.removeClippedSubviews)
+function removeClippedSubviewsOrDefault(removeClippedSubviews: ?boolean) {
+  return removeClippedSubviews ?? Platform.OS === 'android';
+}
+
+// numColumnsOrDefault(this.props.numColumns)
+function numColumnsOrDefault(numColumns: ?number) {
+  return numColumns ?? 1;
+}
 
 type FlatListProps<ItemT> = {|
   ...RequiredProps<ItemT>,
@@ -155,17 +180,6 @@ export type Props<ItemT> = {
   ...FlatListProps<ItemT>,
   ...
 };
-
-const defaultProps = {
-  numColumns: 1,
-  /**
-   * Enabling this prop on Android greatly improves scrolling performance with no known issues.
-   * The alternative is that scrolling on Android is unusably bad. Enabling it on iOS has a few
-   * known issues.
-   */
-  removeClippedSubviews: Platform.OS === 'android',
-};
-export type DefaultProps = typeof defaultProps;
 
 /**
  * A performant interface for rendering simple, flat lists, supporting the most handy features:
@@ -276,7 +290,6 @@ export type DefaultProps = typeof defaultProps;
  * Also inherits [ScrollView Props](docs/scrollview.html#props), unless it is nested in another FlatList of same orientation.
  */
 class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
-  static defaultProps: DefaultProps = defaultProps;
   props: Props<ItemT>;
   /**
    * Scrolls to the end of the content. May be janky without `getItemLayout` prop.
@@ -395,19 +408,18 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
     super(props);
     this._checkProps(this.props);
     if (this.props.viewabilityConfigCallbackPairs) {
-      this._virtualizedListPairs = this.props.viewabilityConfigCallbackPairs.map(
-        pair => ({
+      this._virtualizedListPairs =
+        this.props.viewabilityConfigCallbackPairs.map(pair => ({
           viewabilityConfig: pair.viewabilityConfig,
           onViewableItemsChanged: this._createOnViewableItemsChanged(
             pair.onViewableItemsChanged,
           ),
-        }),
-      );
+        }));
     } else if (this.props.onViewableItemsChanged) {
       this._virtualizedListPairs.push({
-        /* $FlowFixMe(>=0.63.0 site=react_native_fb) This comment suppresses an
-         * error found when Flow v0.63 was deployed. To see the error delete
-         * this comment and run Flow. */
+        /* $FlowFixMe[incompatible-call] (>=0.63.0 site=react_native_fb) This
+         * comment suppresses an error found when Flow v0.63 was deployed. To
+         * see the error delete this comment and run Flow. */
         viewabilityConfig: this.props.viewabilityConfig,
         onViewableItemsChanged: this._createOnViewableItemsChanged(
           this.props.onViewableItemsChanged,
@@ -448,16 +460,16 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
 
   _checkProps(props: Props<ItemT>) {
     const {
-      // $FlowFixMe this prop doesn't exist, is only used for an invariant
+      // $FlowFixMe[prop-missing] this prop doesn't exist, is only used for an invariant
       getItem,
-      // $FlowFixMe this prop doesn't exist, is only used for an invariant
+      // $FlowFixMe[prop-missing] this prop doesn't exist, is only used for an invariant
       getItemCount,
       horizontal,
-      numColumns,
       columnWrapperStyle,
       onViewableItemsChanged,
       viewabilityConfigCallbackPairs,
     } = props;
+    const numColumns = numColumnsOrDefault(this.props.numColumns);
     invariant(
       !getItem && !getItemCount,
       'FlatList does not support custom data formats.',
@@ -478,7 +490,7 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
   }
 
   _getItem = (data: Array<ItemT>, index: number) => {
-    const {numColumns} = this.props;
+    const numColumns = numColumnsOrDefault(this.props.numColumns);
     if (numColumns > 1) {
       const ret = [];
       for (let kk = 0; kk < numColumns; kk++) {
@@ -495,7 +507,7 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
 
   _getItemCount = (data: ?Array<ItemT>): number => {
     if (data) {
-      const {numColumns} = this.props;
+      const numColumns = numColumnsOrDefault(this.props.numColumns);
       return numColumns > 1 ? Math.ceil(data.length / numColumns) : data.length;
     } else {
       return 0;
@@ -503,7 +515,7 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
   };
 
   _keyExtractor = (items: ItemT | Array<ItemT>, index: number) => {
-    const {numColumns} = this.props;
+    const numColumns = numColumnsOrDefault(this.props.numColumns);
     const keyExtractor = this.props.keyExtractor ?? defaultKeyExtractor;
 
     if (numColumns > 1) {
@@ -522,13 +534,13 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
         );
       }
     } else {
-      // $FlowFixMe Can't call keyExtractor with an array
+      // $FlowFixMe[incompatible-call] Can't call keyExtractor with an array
       return keyExtractor(items, index);
     }
   };
 
   _pushMultiColumnViewable(arr: Array<ViewToken>, v: ViewToken): void {
-    const {numColumns} = this.props;
+    const numColumns = numColumnsOrDefault(this.props.numColumns);
     const keyExtractor = this.props.keyExtractor ?? defaultKeyExtractor;
     v.item.forEach((item, ii) => {
       invariant(v.index != null, 'Missing index!');
@@ -549,7 +561,7 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
       changed: Array<ViewToken>,
       ...
     }) => {
-      const {numColumns} = this.props;
+      const numColumns = numColumnsOrDefault(this.props.numColumns);
       if (onViewableItemsChanged) {
         if (numColumns > 1) {
           const changed = [];
@@ -567,12 +579,8 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
   }
 
   _renderer = () => {
-    const {
-      ListItemComponent,
-      renderItem,
-      numColumns,
-      columnWrapperStyle,
-    } = this.props;
+    const {ListItemComponent, renderItem, columnWrapperStyle} = this.props;
+    const numColumns = numColumnsOrDefault(this.props.numColumns);
 
     let virtualizedListRenderKey = ListItemComponent
       ? 'ListItemComponent'
@@ -580,7 +588,9 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
 
     const renderer = (props): React.Node => {
       if (ListItemComponent) {
-        // $FlowFixMe Component isn't valid
+        // $FlowFixMe[not-a-component] Component isn't valid
+        // $FlowFixMe[incompatible-type-arg] Component isn't valid
+        // $FlowFixMe[incompatible-return] Component isn't valid
         return <ListItemComponent {...props} />;
       } else if (renderItem) {
         // $FlowFixMe[incompatible-call]
@@ -591,9 +601,9 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
     };
 
     return {
-      /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an
-       * error found when Flow v0.111 was deployed. To see the error, delete
-       * this comment and run Flow. */
+      /* $FlowFixMe[invalid-computed-prop] (>=0.111.0 site=react_native_fb)
+       * This comment suppresses an error found when Flow v0.111 was deployed.
+       * To see the error, delete this comment and run Flow. */
       [virtualizedListRenderKey]: (info: RenderItemProps<ItemT>) => {
         if (numColumns > 1) {
           const {item, index} = info;
@@ -623,7 +633,12 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
   };
 
   render(): React.Node {
-    const {numColumns, columnWrapperStyle, ...restProps} = this.props;
+    const {
+      numColumns,
+      columnWrapperStyle,
+      removeClippedSubviews: _removeClippedSubviews,
+      ...restProps
+    } = this.props;
 
     return (
       <VirtualizedList
@@ -633,6 +648,9 @@ class FlatList<ItemT> extends React.PureComponent<Props<ItemT>, void> {
         keyExtractor={this._keyExtractor}
         ref={this._captureRef}
         viewabilityConfigCallbackPairs={this._virtualizedListPairs}
+        removeClippedSubviews={removeClippedSubviewsOrDefault(
+          _removeClippedSubviews,
+        )}
         {...this._renderer()}
       />
     );

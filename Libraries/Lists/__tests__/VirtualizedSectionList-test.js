@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -169,7 +169,9 @@ describe('VirtualizedSectionList', () => {
   describe('scrollToLocation', () => {
     const ITEM_HEIGHT = 100;
 
-    const createVirtualizedSectionList = props => {
+    const createVirtualizedSectionList = (
+      props: void | $TEMPORARY$object<{stickySectionHeadersEnabled: boolean}>,
+    ) => {
       const component = ReactTestRenderer.create(
         <VirtualizedSectionList
           sections={[
@@ -207,7 +209,7 @@ describe('VirtualizedSectionList', () => {
 
       const viewOffset = 25;
 
-      // $FlowFixMe scrollToLocation isn't on instance
+      // $FlowFixMe[prop-missing] scrollToLocation isn't on instance
       instance?.scrollToLocation({
         sectionIndex: 0,
         itemIndex: 1,
